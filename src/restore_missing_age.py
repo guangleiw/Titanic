@@ -2,7 +2,11 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
+import sklearn.preprocessing as preprocessing
 
+
+
+from sklearn import linear_model
 from sklearn.ensemble import RandomForestRegressor
 
 data_train = pd.read_csv("/Users/wangguanglei/dev/py_workspace/Titanic/data/train.csv")
@@ -49,4 +53,49 @@ dummies_Pclass = pd.get_dummies(data_train['Pclass'], prefix= 'Pclass')
 
 df = pd.concat([data_train, dummies_Cabin, dummies_Embarked, dummies_Sex, dummies_Pclass], axis=1)
 df.drop(['Pclass', 'Name', 'Sex', 'Ticket', 'Cabin', 'Embarked'], axis=1, inplace=True)
-print(df)
+# print(df)
+
+# 对于age 和 Fare 两个属性来说 ， 变化范围太大，对逻辑回归的结果会产生影响
+# 在做处理之前进行scaling
+scaler  =  preprocessing.StandardScaler()
+age_scale_param = scaler.fit(df['Age'])
+df['Age_scaled'] = scaler.fit_transform(df['Age'],age_scale_param)
+fare_scale_param = scaler.fit(df['Fare'])
+df['Fare_scaled'] = scaler.fit_transform(df['Fare'],fare_scale_param)
+# print(df)
+
+
+##到这里 我们就可以建立一个逻辑回归模型
+
+
+train_df = df.filter(regex='Survived|Age_.*|SibSp|Parch|Fare_.*|Cabin_.*|Embarked_.*|Sex_.*|Pclass_.*')
+train_np = train_df.as_matrix()
+
+y = train_np[:,0] # y就是survive的结果
+X = train_np[:,1:]
+
+clf = linear_model.LogisticRegression(C=1.0,penalty='l1',tol=1e-6)
+clf.fit(X,y)
+clf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

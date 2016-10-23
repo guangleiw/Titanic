@@ -80,11 +80,34 @@ clf
 
 
 
+# 测试数据处理
+data_test = pd.read_csv("/Users/wangguanglei/dev/py_workspace/Titanic/data/test.csv")
+data_test.loc[(data_test.Fare.isnull()),'Fare'] = 0
 
+tmp_df = data_test[['Age','Fare','Parch','SibSp','Pclass']]
+null_age = tmp_df[data_test.Age.isnull()].as_matrix()
 
+X= null_age[:,1:]
+predictedAges = rfr.predict(X)
+data_test.loc[(data_test.Age.isnull()),'Age'] = predictedAges
 
+data_test = set_Cabin_type(data_test)
+dummies_Cabin = pd.get_dummies (data_test['Cabin'],prefix = 'Cabin')
+dummies_Embarked = pd.get_dummies(data_test['Embarked'], prefix= 'Embarked')
+dummies_Sex = pd.get_dummies(data_test['Sex'], prefix= 'Sex')
+dummies_Pclass = pd.get_dummies(data_test['Pclass'], prefix= 'Pclass')
 
+df_test = pd.concat([data_test, dummies_Cabin, dummies_Embarked, dummies_Sex, dummies_Pclass], axis=1)
+df_test.drop(['Pclass', 'Name', 'Sex', 'Ticket', 'Cabin', 'Embarked'], axis=1, inplace=True)
+df_test['Age_scaled'] = scaler.fit_transform(df_test['Age'], age_scale_param)
+df_test['Fare_scaled'] = scaler.fit_transform(df_test['Fare'], fare_scale_param)
+# print  df_test
 
+#开始预测
+test = df_test.filter(regex='Age_.*|SibSp|Parch|Fare_.*|Cabin_.*|Embarked_.*|Sex_.*|Pclass_.*')
+predictions = clf.predict(test)
+result = pd.DataFrame({'PassengerId':data_test['PassengerId'].as_matrix(), 'Survived':predictions.astype(np.int32)})
+result.to_csv("/Users/wangguanglei/dev/py_workspace/Titanic/data/result.csv", index=False)
 
 
 
